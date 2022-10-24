@@ -1,8 +1,9 @@
 package it.excel_models;
 
 import it.excel_models.config.ExcelColumn;
+import it.excel_models.config.ExcelObject;
 import it.excel_models.config.ExcelParserConfig;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -10,12 +11,14 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
-@Slf4j
+@Log4j2
 public class ExcelParser {
     private final ExcelParserConfig config;
 
@@ -28,26 +31,29 @@ public class ExcelParser {
     }
 
     public <T> List<T> parse(InputStream inputStream, final Class<T> type) {
+        return parse(inputStream, type, null);
+    }
+
+    public <T> List<T> parse(InputStream inputStream, final Class<T> type, Function<T, T> afterParse) {
         log.debug("Starting parse excel for '{}' model", type.getSimpleName());
-        Map<ExcelColumn, Field> fieldMap = Utils.getFieldMap(type);
 
         List<T> resultList = new ArrayList<>();
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-            Sheet sheet = workbook.getSheetAt(config.getSheetIndex());
+            Sheet sheet = workbook.getSheetAt(config.getSheetIndex() - 1);
 
             for (Row row : sheet) {
                 if (row.getRowNum() >= config.getHeaderOffset()) {
-                    T model = type.getDeclaredConstructor().newInstance();
-
-                    for (Map.Entry<ExcelColumn, Field> entry : fieldMap.entrySet()) {
-                        ExcelColumn annotation = entry.getKey();
-                        Cell cell = row.getCell(annotation.index());
-
-                        if (cell != null) {
-                            Field field = entry.getValue();
-                            field.set(model, Utils.getCellValue(cell, field));
-                        }
+                    if (row.getRowNum() >= (config.getFooterIndex() - 1)) {
+                        log.info("Detected footer configuration, stopping parse");
+                        break;
                     }
+
+                    T model = parseModel(type, row);
+
+                    if (afterParse != null) {
+                        afterParse.apply(model);
+                    }
+
                     resultList.add(model);
                 }
             }
@@ -58,5 +64,28 @@ public class ExcelParser {
 
         log.info("File parsed successfully for '{}' model", type.getSimpleName());
         return resultList;
+    }
+
+    private <T> T parseModel(final Class<T> type, final Row row) throws Exception {
+        Map<Annotation, Field> fieldMap = Utils.getFieldMap(type);
+        T model = type.getDeclaredConstructor().newInstance();
+
+        for (Map.Entry<Annotation, Field> entry : fieldMap.entrySet()) {
+            if (entry.getKey() instanceof ExcelColumn) {
+                ExcelColumn annotation = (ExcelColumn) entry.getKey();
+                Cell cell = row.getCell(annotation.index() - 1);
+
+                if (cell != null) {
+                    Field field = entry.getValue();
+                    field.set(model, Utils.getCellValue(cell, field, annotation));
+                }
+            } else if (entry.getKey() instanceof ExcelObject) {
+                Field field = entry.getValue();
+                Object nestedModel = parseModel(field.getType(), row);
+                field.set(model, nestedModel);
+            }
+        }
+
+        return model;
     }
 }

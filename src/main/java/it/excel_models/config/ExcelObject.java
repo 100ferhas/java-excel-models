@@ -7,10 +7,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface ExcelColumn {
-    int index(); // column index, starting from 1
+public @interface ExcelObject {
 
-    String title() default ""; // column title
-
-    boolean defaultInvalidValues() default false; // try to assign default value on invalid column value
 }
