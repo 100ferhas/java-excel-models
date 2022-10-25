@@ -40,7 +40,7 @@ public class ExcelParser {
 
             for (Row row : sheet) {
                 if (row.getRowNum() >= config.getHeaderOffset()) {
-                    if (row.getRowNum() >= (config.getFooterIndex() - 1)) {
+                    if (config.getFooterIndex() != null && row.getRowNum() >= (config.getFooterIndex() - 1)) {
                         log.info("Detected footer configuration, stopping parse");
                         break;
                     }

@@ -13,6 +13,6 @@ import lombok.experimental.Accessors;
 @AllArgsConstructor
 public class ExcelParserConfig {
     private int headerOffset = 0;
-    private int footerIndex = 0;
-    private int sheetIndex = 0;
+    private Integer footerIndex;
+    private int sheetIndex = 1;
 }

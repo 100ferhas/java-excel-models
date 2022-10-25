@@ -1,9 +1,11 @@
 package it.excel_models;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,6 +63,10 @@ public class Utils {
     private static Object tryConvert(Field field, ExcelColumn annotation, Object value) {
         if (field.getType().isAssignableFrom(double.class) || field.getType().isAssignableFrom(Double.class)) {
             return tryParseDouble(field, annotation, value);
+        } else if (field.getType().isAssignableFrom(int.class) || field.getType().isAssignableFrom(Integer.class)) {
+            return tryParseInteger(field, annotation, value);
+        } else if (field.getType().isAssignableFrom(Date.class)) {
+            return tryParseDate(field, annotation, value);
         }
 
         return value;
@@ -78,11 +84,23 @@ public class Utils {
         }
     }
 
-//    /**
-//     * Get type of collection field.
-//     */
-//    static <T> Class<T> getCollectionType(List<T> list) {
-////        return Class.forName(list.getClass().getTypeParameters()[0].getBounds()[0].getTypeName());
-//        return ((Class<T>) ((ParameterizedType) list.getClass().getGenericSuperclass()).getActualTypeArguments()[1]);
-//    }
+    private static int tryParseInteger(Field field, ExcelColumn annotation, Object value) {
+        try {
+            return Double.valueOf(String.valueOf(value)).intValue();
+        } catch (IllegalArgumentException e) {
+            if (annotation.defaultInvalidValues()) {
+                return 0;
+            }
+
+            throw new IllegalArgumentException(String.format("Failed to parse '%s' into %s", value, field.getType()));
+        }
+    }
+
+    private static Date tryParseDate(Field field, ExcelColumn annotation, Object value) {
+        try {
+            return DateUtil.getJavaDate((Double) value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(String.format("Failed to parse '%s' into %s", value, field.getType()));
+        }
+    }
 }

@@ -56,4 +56,38 @@ public class ParseTest {
             }
         }
     }
+
+    @Test
+    public void testParseandWrite2() throws Exception {
+        try (InputStream is = getClass().getResourceAsStream("Financial Sample.xlsx")) {
+            ExcelParserConfig config = new ExcelParserConfig().withHeaderOffset(1);
+            List<FinancialModel> estimateRows = new ExcelParser(config).parse(is, FinancialModel.class);
+
+            try (FileOutputStream os = new FileOutputStream("Financial Sample_OUT.xlsx")) {
+
+                Function<Workbook, CellStyle> headerStyle = workbook -> {
+                    CellStyle cellStyle = workbook.createCellStyle();
+                    cellStyle.setFillForegroundColor(IndexedColors.ORANGE.getIndex());
+                    cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                    return cellStyle;
+                };
+
+                Consumer<Sheet> footerBuilder = sheet -> {
+                    CellStyle cellStyle = sheet.getWorkbook().createCellStyle();
+                    cellStyle.setFillForegroundColor(IndexedColors.ORANGE.getIndex());
+                    cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                    Row row = sheet.createRow(sheet.getPhysicalNumberOfRows());
+                    Cell cell = row.createCell(0);
+                    cell.setCellValue("Footer!!!!!!!");
+                    cell.setCellStyle(cellStyle);
+                };
+
+                ExcelWriterConfig excelWriterConfig = new ExcelWriterConfig()
+                        .withHeaderStyleBuilder(headerStyle)
+                        .withFooterBuilder(footerBuilder);
+
+                new ExcelWriter(excelWriterConfig).write(estimateRows, os);
+            }
+        }
+    }
 }
