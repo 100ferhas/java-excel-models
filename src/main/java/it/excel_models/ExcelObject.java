@@ -1,4 +1,4 @@
-package it.excel_models.config;
+package it.excel_models;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

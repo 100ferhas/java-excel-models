@@ -1,10 +1,8 @@
 package it.excel_models;
 
-import it.excel_models.config.ExcelColumn;
-import it.excel_models.config.ExcelObject;
-import it.excel_models.config.ExcelWriterConfig;
 import lombok.extern.log4j.Log4j2;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -20,34 +18,56 @@ import java.util.Map;
 @Log4j2
 public class ExcelWriter {
     private final ExcelWriterConfig config;
+    private CellStyle contentStyle;
 
     public ExcelWriter() {
-        this.config = new ExcelWriterConfig();
+        config = new ExcelWriterConfig();
     }
 
     public ExcelWriter(ExcelWriterConfig config) {
         this.config = config;
     }
 
-    public <E> OutputStream write(List<E> models) {
+    public <T> OutputStream write(List<T> models) {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         write(models, byteArrayOutputStream);
         return byteArrayOutputStream;
     }
 
     public <T> void write(List<T> models, OutputStream outputStream) {
-        Class<?> type = Utils.getCollectionType(models);
-        log.debug("Starting writing excel for '{}' model", type);
+        log.debug("Starting writing excel");
+
+        if (models == null || models.isEmpty()) {
+            log.warn("No data to export...");
+            return;
+        }
 
         try (Workbook workbook = new XSSFWorkbook()) {
+            if (config.getContentStyleBuilder() != null) {
+                contentStyle = config.getContentStyleBuilder().apply(workbook);
+            } else {
+                contentStyle = workbook.createCellStyle();
+                contentStyle.setWrapText(true);
+            }
+
             Sheet sheet = config.getSheetName() != null ? workbook.createSheet(config.getSheetName()) : workbook.createSheet();
 
-            // todo header
+            CellStyle cellStyle = config.getHeaderStyleBuilder() != null ? config.getHeaderStyleBuilder().apply(workbook) : null;
+            writeHeader(sheet.createRow(sheet.getPhysicalNumberOfRows()), cellStyle, models.get(0));
 
-            int currentRowIndex = 0;
+            int currentRowIndex = sheet.getPhysicalNumberOfRows();
             for (T model : models) {
                 Row row = sheet.createRow(currentRowIndex++);
+                row.setHeight((short) -1);
                 writeModel(model, row);
+            }
+
+            for (int i = 0; i < sheet.getRow(0).getLastCellNum(); i++) {
+                sheet.autoSizeColumn(i, true);
+            }
+
+            if (config.getFooterBuilder() != null) {
+                config.getFooterBuilder().accept(sheet);
             }
 
             workbook.write(outputStream);
@@ -57,17 +77,38 @@ public class ExcelWriter {
             throw new RuntimeException("An error occurred while writing file.");
         }
 
-        log.info("File parsed successfully for '{}' model", type.getSimpleName());
+        log.info("File written successfully");
     }
 
-    private void writeModel(final Object model, final Row row) throws Exception {
-        Map<Annotation, Field> fieldMap = Utils.getFieldMap(model.getClass());
+    private <T> void writeHeader(Row row, CellStyle cellStyle, T model) throws Exception {
+        Map<Annotation, Field> fieldMap = Utils.getFieldMap(Class.forName(model.getClass().getTypeName()), true);
 
         for (Map.Entry<Annotation, Field> entry : fieldMap.entrySet()) {
             if (entry.getKey() instanceof ExcelColumn) {
                 ExcelColumn annotation = (ExcelColumn) entry.getKey();
                 Field field = entry.getValue();
-                Cell cell = row.createCell(annotation.index());
+                Cell cell = row.createCell(annotation.index() - 1);
+                cell.setCellValue(annotation.title() != null && !annotation.title().isBlank() ? annotation.title() : field.getName());
+
+                if (cellStyle != null) {
+                    cell.setCellStyle(cellStyle);
+                }
+            } else if (entry.getKey() instanceof ExcelObject) {
+                Field field = entry.getValue();
+                writeHeader(row, cellStyle, field.get(model));
+            }
+        }
+    }
+
+    private <T> void writeModel(final T model, final Row row) throws Exception {
+        Map<Annotation, Field> fieldMap = Utils.getFieldMap(Class.forName(model.getClass().getTypeName()), true);
+
+        for (Map.Entry<Annotation, Field> entry : fieldMap.entrySet()) {
+            if (entry.getKey() instanceof ExcelColumn) {
+                ExcelColumn annotation = (ExcelColumn) entry.getKey();
+                Field field = entry.getValue();
+                Cell cell = row.createCell(annotation.index() - 1);
+                cell.setCellStyle(contentStyle);
 
                 Object value = field.get(model);
                 if (value != null) {
@@ -76,7 +117,7 @@ public class ExcelWriter {
                 }
             } else if (entry.getKey() instanceof ExcelObject) {
                 Field field = entry.getValue();
-                writeModel(field.getType(), row);
+                writeModel(field.get(model), row);
             }
         }
     }

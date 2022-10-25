@@ -1,25 +1,24 @@
 package it.excel_models;
 
-import it.excel_models.config.ExcelColumn;
-import it.excel_models.config.ExcelObject;
 import org.apache.poi.ss.usermodel.Cell;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-class Utils {
-    static <E> Map<Annotation, Field> getFieldMap(Class<E> type) {
+public class Utils {
+    public static <E> Map<Annotation, Field> getFieldMap(Class<E> type, boolean isExport) {
         Map<Annotation, Field> fieldMap = new HashMap<>();
 
         for (Field field : type.getDeclaredFields()) {
             if (field.isAnnotationPresent(ExcelColumn.class)) {
                 field.setAccessible(true);
                 ExcelColumn annotation = field.getAnnotation(ExcelColumn.class);
-                fieldMap.put(annotation, field);
+
+                if (!(annotation.onlyExport() && !isExport)) {
+                    fieldMap.put(annotation, field);
+                }
             } else if (field.isAnnotationPresent(ExcelObject.class)) {
                 field.setAccessible(true);
                 ExcelObject annotation = field.getAnnotation(ExcelObject.class);
@@ -79,10 +78,11 @@ class Utils {
         }
     }
 
-    /**
-     * Get type of collection field.
-     */
-    static Class<?> getCollectionType(List<?> list) {
-        return ((Class<?>) ((ParameterizedType) list.getClass().getGenericSuperclass()).getActualTypeArguments()[1]);
-    }
+//    /**
+//     * Get type of collection field.
+//     */
+//    static <T> Class<T> getCollectionType(List<T> list) {
+////        return Class.forName(list.getClass().getTypeParameters()[0].getBounds()[0].getTypeName());
+//        return ((Class<T>) ((ParameterizedType) list.getClass().getGenericSuperclass()).getActualTypeArguments()[1]);
+//    }
 }

@@ -1,5 +1,5 @@
-import it.excel_models.config.ExcelColumn;
-import it.excel_models.config.ExcelObject;
+import it.excel_models.ExcelColumn;
+import it.excel_models.ExcelObject;
 import lombok.Data;
 
 @Data

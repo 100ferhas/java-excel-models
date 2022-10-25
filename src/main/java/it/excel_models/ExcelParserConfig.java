@@ -1,4 +1,4 @@
-package it.excel_models.config;
+package it.excel_models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,6 +11,8 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExcelWriterConfig {
-    private String sheetName;
+public class ExcelParserConfig {
+    private int headerOffset = 0;
+    private int footerIndex = 0;
+    private int sheetIndex = 0;
 }

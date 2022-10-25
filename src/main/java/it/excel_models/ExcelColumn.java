@@ -1,4 +1,4 @@
-package it.excel_models.config;
+package it.excel_models;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,4 +13,6 @@ public @interface ExcelColumn {
     String title() default ""; // column title
 
     boolean defaultInvalidValues() default false; // try to assign default value on invalid column value
+
+    boolean onlyExport() default false; // if it has to be included in export but not for import
 }

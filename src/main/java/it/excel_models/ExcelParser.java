@@ -1,8 +1,5 @@
 package it.excel_models;
 
-import it.excel_models.config.ExcelColumn;
-import it.excel_models.config.ExcelObject;
-import it.excel_models.config.ExcelParserConfig;
 import lombok.extern.log4j.Log4j2;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -16,7 +13,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 @Log4j2
 public class ExcelParser {
@@ -34,7 +31,7 @@ public class ExcelParser {
         return parse(inputStream, type, null);
     }
 
-    public <T> List<T> parse(InputStream inputStream, final Class<T> type, Function<T, T> afterParse) {
+    public <T> List<T> parse(InputStream inputStream, final Class<T> type, Consumer<T> afterParse) {
         log.debug("Starting parse excel for '{}' model", type.getSimpleName());
 
         List<T> resultList = new ArrayList<>();
@@ -51,7 +48,7 @@ public class ExcelParser {
                     T model = parseModel(type, row);
 
                     if (afterParse != null) {
-                        afterParse.apply(model);
+                        afterParse.accept(model);
                     }
 
                     resultList.add(model);
@@ -67,7 +64,7 @@ public class ExcelParser {
     }
 
     private <T> T parseModel(final Class<T> type, final Row row) throws Exception {
-        Map<Annotation, Field> fieldMap = Utils.getFieldMap(type);
+        Map<Annotation, Field> fieldMap = Utils.getFieldMap(type, false);
         T model = type.getDeclaredConstructor().newInstance();
 
         for (Map.Entry<Annotation, Field> entry : fieldMap.entrySet()) {
