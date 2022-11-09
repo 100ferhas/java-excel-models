@@ -64,7 +64,7 @@ public class ExcelParser {
     }
 
     private <T> T parseModel(final Class<T> type, final Row row) throws Exception {
-        Map<Annotation, Field> fieldMap = Utils.getFieldMap(type, false);
+        Map<Annotation, Field> fieldMap = ExcelUtils.getFieldMap(type, false);
         T model = type.getDeclaredConstructor().newInstance();
 
         for (Map.Entry<Annotation, Field> entry : fieldMap.entrySet()) {
@@ -74,7 +74,7 @@ public class ExcelParser {
 
                 if (cell != null) {
                     Field field = entry.getValue();
-                    field.set(model, Utils.getCellValue(cell, field, annotation));
+                    field.set(model, ExcelUtils.getCellValue(cell, field, annotation));
                 }
             } else if (entry.getKey() instanceof ExcelObject) {
                 Field field = entry.getValue();

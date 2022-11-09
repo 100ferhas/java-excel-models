@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Utils {
+public class ExcelUtils {
     public static <E> Map<Annotation, Field> getFieldMap(Class<E> type, boolean isExport) {
         Map<Annotation, Field> fieldMap = new HashMap<>();
 
@@ -66,7 +66,7 @@ public class Utils {
         } else if (field.getType().isAssignableFrom(int.class) || field.getType().isAssignableFrom(Integer.class)) {
             return tryParseInteger(field, annotation, value);
         } else if (field.getType().isAssignableFrom(Date.class)) {
-            return tryParseDate(field, annotation, value);
+            return tryParseDate(field, value);
         }
 
         return value;
@@ -96,7 +96,7 @@ public class Utils {
         }
     }
 
-    private static Date tryParseDate(Field field, ExcelColumn annotation, Object value) {
+    private static Date tryParseDate(Field field, Object value) {
         try {
             return DateUtil.getJavaDate((Double) value);
         } catch (IllegalArgumentException e) {

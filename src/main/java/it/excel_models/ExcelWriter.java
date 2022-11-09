@@ -81,7 +81,7 @@ public class ExcelWriter {
     }
 
     private <T> void writeHeader(Row row, CellStyle cellStyle, T model) throws Exception {
-        Map<Annotation, Field> fieldMap = Utils.getFieldMap(Class.forName(model.getClass().getTypeName()), true);
+        Map<Annotation, Field> fieldMap = ExcelUtils.getFieldMap(Class.forName(model.getClass().getTypeName()), true);
 
         for (Map.Entry<Annotation, Field> entry : fieldMap.entrySet()) {
             if (entry.getKey() instanceof ExcelColumn) {
@@ -101,7 +101,7 @@ public class ExcelWriter {
     }
 
     private <T> void writeModel(final T model, final Row row) throws Exception {
-        Map<Annotation, Field> fieldMap = Utils.getFieldMap(Class.forName(model.getClass().getTypeName()), true);
+        Map<Annotation, Field> fieldMap = ExcelUtils.getFieldMap(Class.forName(model.getClass().getTypeName()), true);
 
         for (Map.Entry<Annotation, Field> entry : fieldMap.entrySet()) {
             if (entry.getKey() instanceof ExcelColumn) {
