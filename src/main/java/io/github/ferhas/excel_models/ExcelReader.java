@@ -1,6 +1,10 @@
-package it.excel_models;
+package io.github.ferhas.excel_models;
 
-import lombok.extern.log4j.Log4j2;
+import io.github.ferhas.excel_models.annotation.ExcelColumn;
+import io.github.ferhas.excel_models.annotation.ExcelObject;
+import io.github.ferhas.excel_models.config.ExcelReaderConfig;
+import io.github.ferhas.excel_models.exception.ExcelModelException;
+import lombok.NonNull;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -15,36 +19,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@Log4j2
-public class ExcelParser {
-    private final ExcelParserConfig config;
+public class ExcelReader {
+    private final ExcelReaderConfig config;
 
-    public ExcelParser() {
-        this.config = new ExcelParserConfig();
+    public ExcelReader() {
+        this.config = new ExcelReaderConfig();
     }
 
-    public ExcelParser(ExcelParserConfig config) {
+    public ExcelReader(ExcelReaderConfig config) {
         this.config = config;
     }
 
-    public <T> List<T> parse(InputStream inputStream, final Class<T> type) {
+    public final <T> List<T> parse(@NonNull InputStream inputStream, final Class<T> type) {
         return parse(inputStream, type, null);
     }
 
-    public <T> List<T> parse(InputStream inputStream, final Class<T> type, Consumer<T> afterParse) {
-        log.debug("Starting parse excel for '{}' model", type.getSimpleName());
-
+    public final <T> List<T> parse(@NonNull InputStream inputStream, @NonNull Class<T> type, Consumer<T> afterParse) {
         List<T> resultList = new ArrayList<>();
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(config.getSheetIndex() - 1);
 
             for (Row row : sheet) {
                 if (row.getRowNum() >= config.getHeaderOffset()) {
-                    if (config.getFooterIndex() != null && row.getRowNum() >= (config.getFooterIndex() - 1)) {
-                        log.info("Detected footer configuration, stopping parse");
-                        break;
-                    }
-
                     T model = parseModel(type, row);
 
                     if (afterParse != null) {
@@ -55,11 +51,9 @@ public class ExcelParser {
                 }
             }
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException("An error occurred while reading file.");
+            throw new ExcelModelException("An error occurred while reading file.", e);
         }
 
-        log.info("File parsed successfully for '{}' model", type.getSimpleName());
         return resultList;
     }
 

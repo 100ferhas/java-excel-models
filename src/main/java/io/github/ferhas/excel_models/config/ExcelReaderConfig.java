@@ -1,4 +1,4 @@
-package it.excel_models;
+package io.github.ferhas.excel_models.config;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,8 +11,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExcelParserConfig {
+public class ExcelReaderConfig {
     private int headerOffset = 0;
-    private Integer footerIndex;
     private int sheetIndex = 1;
 }

@@ -1,4 +1,4 @@
-package it.excel_models;
+package io.github.ferhas.excel_models.config;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,6 +9,8 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -19,6 +21,7 @@ import java.util.function.Function;
 @AllArgsConstructor
 public class ExcelWriterConfig {
     private String sheetName;
+    private BiConsumer<Workbook, Sheet> headerBuilder;
     private Function<Workbook, CellStyle> headerStyleBuilder;
     private Function<Workbook, CellStyle> contentStyleBuilder;
     private Consumer<Sheet> footerBuilder;

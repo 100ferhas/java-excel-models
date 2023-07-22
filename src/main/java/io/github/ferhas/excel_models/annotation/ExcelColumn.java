@@ -1,4 +1,4 @@
-package it.excel_models;
+package io.github.ferhas.excel_models.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -15,4 +15,6 @@ public @interface ExcelColumn {
     boolean defaultInvalidValues() default false; // try to assign default value on invalid column value
 
     boolean onlyExport() default false; // if it has to be included in export but not for import
+
+    boolean suppressErrors() default false; // If it has to suppress parsing errors
 }

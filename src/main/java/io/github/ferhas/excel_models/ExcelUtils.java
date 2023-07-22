@@ -1,15 +1,17 @@
-package it.excel_models;
+package io.github.ferhas.excel_models;
 
+import io.github.ferhas.excel_models.annotation.ExcelColumn;
+import io.github.ferhas.excel_models.annotation.ExcelObject;
+import io.github.ferhas.excel_models.converter.FieldConverter;
+import io.github.ferhas.excel_models.exception.ExcelModelParseException;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.DateUtil;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ExcelUtils {
+abstract class ExcelUtils {
     public static <E> Map<Annotation, Field> getFieldMap(Class<E> type, boolean isExport) {
         Map<Annotation, Field> fieldMap = new HashMap<>();
 
@@ -61,46 +63,15 @@ public class ExcelUtils {
     }
 
     private static Object tryConvert(Field field, ExcelColumn annotation, Object value) {
-        if (field.getType().isAssignableFrom(double.class) || field.getType().isAssignableFrom(Double.class)) {
-            return tryParseDouble(field, annotation, value);
-        } else if (field.getType().isAssignableFrom(int.class) || field.getType().isAssignableFrom(Integer.class)) {
-            return tryParseInteger(field, annotation, value);
-        } else if (field.getType().isAssignableFrom(Date.class)) {
-            return tryParseDate(field, value);
-        }
-
-        return value;
-    }
-
-    private static double tryParseDouble(Field field, ExcelColumn annotation, Object value) {
         try {
-            return Double.parseDouble(String.valueOf(value));
-        } catch (IllegalArgumentException e) {
-            if (annotation.defaultInvalidValues()) {
-                return 0;
+            Object fieldType = field.getType().isEnum() ? Enum.class : field.getType();
+            FieldConverter<?> fieldConverter = FieldConverterProvider.converters.get(fieldType);
+            return fieldConverter == null ? value : fieldConverter.tryParse(field, annotation, value);
+        } catch (ExcelModelParseException e) {
+            if (!annotation.suppressErrors()) {
+                throw new IllegalArgumentException(String.format("Failed to parse '%s' into field '%s.%s'", value, field.getDeclaringClass().getSimpleName(), field.getName()));
             }
-
-            throw new IllegalArgumentException(String.format("Failed to parse '%s' into %s", value, field.getType()));
-        }
-    }
-
-    private static int tryParseInteger(Field field, ExcelColumn annotation, Object value) {
-        try {
-            return Double.valueOf(String.valueOf(value)).intValue();
-        } catch (IllegalArgumentException e) {
-            if (annotation.defaultInvalidValues()) {
-                return 0;
-            }
-
-            throw new IllegalArgumentException(String.format("Failed to parse '%s' into %s", value, field.getType()));
-        }
-    }
-
-    private static Date tryParseDate(Field field, Object value) {
-        try {
-            return DateUtil.getJavaDate((Double) value);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(String.format("Failed to parse '%s' into %s", value, field.getType()));
+            return null;
         }
     }
 }

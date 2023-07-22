@@ -1,11 +1,11 @@
-package it.excel_models;
+package io.github.ferhas.excel_models;
 
-import lombok.extern.log4j.Log4j2;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import io.github.ferhas.excel_models.annotation.ExcelColumn;
+import io.github.ferhas.excel_models.annotation.ExcelObject;
+import io.github.ferhas.excel_models.config.ExcelWriterConfig;
+import io.github.ferhas.excel_models.exception.ExcelModelException;
+import lombok.NonNull;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.ByteArrayOutputStream;
@@ -15,7 +15,6 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
-@Log4j2
 public class ExcelWriter {
     private final ExcelWriterConfig config;
     private CellStyle contentStyle;
@@ -34,15 +33,13 @@ public class ExcelWriter {
         return byteArrayOutputStream;
     }
 
-    public <T> void write(List<T> models, OutputStream outputStream) {
-        log.debug("Starting writing excel");
-
-        if (models == null || models.isEmpty()) {
-            log.warn("No data to export...");
+    public <T> void write(@NonNull List<T> models, @NonNull OutputStream outputStream) {
+        if (models.isEmpty()) {
             return;
         }
 
         try (Workbook workbook = new XSSFWorkbook()) {
+            // init content style
             if (config.getContentStyleBuilder() != null) {
                 contentStyle = config.getContentStyleBuilder().apply(workbook);
             } else {
@@ -52,8 +49,13 @@ public class ExcelWriter {
 
             Sheet sheet = config.getSheetName() != null ? workbook.createSheet(config.getSheetName()) : workbook.createSheet();
 
-            CellStyle cellStyle = config.getHeaderStyleBuilder() != null ? config.getHeaderStyleBuilder().apply(workbook) : null;
-            writeHeader(sheet.createRow(sheet.getPhysicalNumberOfRows()), cellStyle, models.get(0));
+            // create header or call consumer created by user
+            if (config.getHeaderBuilder() != null) {
+                config.getHeaderBuilder().accept(workbook, sheet);
+            } else {
+                CellStyle cellStyle = config.getHeaderStyleBuilder() != null ? config.getHeaderStyleBuilder().apply(workbook) : null;
+                writeHeader(sheet.createRow(sheet.getPhysicalNumberOfRows()), cellStyle, models.get(0));
+            }
 
             int currentRowIndex = sheet.getPhysicalNumberOfRows();
             for (T model : models) {
@@ -73,11 +75,8 @@ public class ExcelWriter {
             workbook.write(outputStream);
 
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException("An error occurred while writing file.");
+            throw new ExcelModelException("An error occurred while writing file.", e);
         }
-
-        log.info("File written successfully");
     }
 
     private <T> void writeHeader(Row row, CellStyle cellStyle, T model) throws Exception {
@@ -112,7 +111,6 @@ public class ExcelWriter {
 
                 Object value = field.get(model);
                 if (value != null) {
-                    // todo types
                     cell.setCellValue(value.toString());
                 }
             } else if (entry.getKey() instanceof ExcelObject) {
