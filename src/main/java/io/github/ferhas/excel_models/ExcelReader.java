@@ -49,14 +49,14 @@ public class ExcelReader {
                 if (!isRowEmpty(row)) {
                     T model = parseModel(type, row);
 
+                    if (afterParse != null) {
+                        afterParse.accept(model);
+                    }
+
                     try {
                         validator.validate(model);
                     } catch (ValidationException e) {
                         throw new ValidationException(String.format("Invalid value on row %s, %s", row.getRowNum() + 1, e.getMessage()));
-                    }
-
-                    if (afterParse != null) {
-                        afterParse.accept(model);
                     }
 
                     resultList.add(model);
