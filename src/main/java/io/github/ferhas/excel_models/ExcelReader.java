@@ -43,8 +43,10 @@ public class ExcelReader {
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(config.getSheetIndex() - 1);
 
-            for (Row row : sheet) {
-                if (row.getRowNum() >= config.getHeaderOffset()) {
+            for (int rowNum = config.getHeaderOffset(); rowNum < sheet.getPhysicalNumberOfRows(); rowNum++) {
+                Row row = sheet.getRow(rowNum);
+
+                if (!isRowEmpty(row)) {
                     T model = parseModel(type, row);
 
                     try {
@@ -68,6 +70,21 @@ public class ExcelReader {
         }
 
         return resultList;
+    }
+
+    /**
+     * Check if the row contains only empty cells, sometimes can occur with Excel files.
+     *
+     * @param row Inspecting row
+     * @return true if empty, false otherwise
+     */
+    private boolean isRowEmpty(Row row) {
+        for (Cell cell : row) {
+            if (cell.getStringCellValue() != null && !cell.getStringCellValue().isBlank()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private <T> T parseModel(final Class<T> type, final Row row) throws Exception {
