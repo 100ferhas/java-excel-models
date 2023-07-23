@@ -26,12 +26,14 @@ public class ParseTest {
             // parse
             List<Book> books = new ExcelReader(config).parse(Objects.requireNonNull(is), Book.class, parsedBook -> {
                 Author author = parsedBook.getAuthor();
-                String authorFullName = String.format("%s %s", author.getFirstName(), author.getLastName());
-                author.setFullName(authorFullName);
+                String authorFullName = author.getFirstName() + author.getLastName();
+                author.setFullName(authorFullName.trim());
             });
 
             assertEquals(3, books.size(), "Unexpected results number!");
+            assertEquals("Marcel de la vega", books.get(2).getAuthor().getFullName());
             // todo other test assertions
+
         }
     }
 
