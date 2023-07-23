@@ -4,6 +4,7 @@ import io.github.ferhas.excel_models.annotation.ExcelColumn;
 import io.github.ferhas.excel_models.annotation.ExcelObject;
 import io.github.ferhas.excel_models.config.ExcelReaderConfig;
 import io.github.ferhas.excel_models.exception.ExcelModelException;
+import jakarta.validation.ValidationException;
 import lombok.NonNull;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -22,12 +23,15 @@ import java.util.function.Consumer;
 public class ExcelReader {
     private final ExcelReaderConfig config;
 
+    private final ExcelReaderValidator validator;
+
     public ExcelReader() {
-        this.config = new ExcelReaderConfig();
+        this(new ExcelReaderConfig());
     }
 
     public ExcelReader(ExcelReaderConfig config) {
         this.config = config;
+        this.validator = new ExcelReaderValidator();
     }
 
     public final <T> List<T> parse(@NonNull InputStream inputStream, final Class<T> type) {
@@ -43,6 +47,12 @@ public class ExcelReader {
                 if (row.getRowNum() >= config.getHeaderOffset()) {
                     T model = parseModel(type, row);
 
+                    try {
+                        validator.validate(model);
+                    } catch (ValidationException e) {
+                        throw new ValidationException(String.format("Invalid value on row %s, %s", row.getRowNum() + 1, e.getMessage()));
+                    }
+
                     if (afterParse != null) {
                         afterParse.accept(model);
                     }
@@ -52,6 +62,9 @@ public class ExcelReader {
             }
         } catch (Exception e) {
             throw new ExcelModelException("An error occurred while reading file.", e);
+        } finally {
+            // close validator!
+            validator.close();
         }
 
         return resultList;
