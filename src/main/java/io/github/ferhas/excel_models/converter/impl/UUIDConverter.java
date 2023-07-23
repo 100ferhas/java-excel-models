@@ -15,7 +15,7 @@ class UUIDConverter implements FieldConverter<UUID> {
         try {
             return UUID.fromString(String.valueOf(value));
         } catch (IllegalArgumentException e) {
-            throw new ExcelModelParseException();
+            throw new ExcelModelParseException(e);
         }
     }
 }

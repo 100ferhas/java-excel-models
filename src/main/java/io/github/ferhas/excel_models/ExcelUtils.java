@@ -43,7 +43,7 @@ abstract class ExcelUtils {
         switch (cell.getCellType()) {
             case ERROR:
             case FORMULA:
-                return null; // IGNORE!
+                return null; // ignore
             case NUMERIC:
                 value = cell.getNumericCellValue();
                 break;
@@ -69,7 +69,7 @@ abstract class ExcelUtils {
             return fieldConverter == null ? value : fieldConverter.tryParse(field, annotation, value);
         } catch (ExcelModelParseException e) {
             if (!annotation.suppressErrors()) {
-                throw new IllegalArgumentException(String.format("Failed to parse '%s' into field '%s.%s'", value, field.getDeclaringClass().getSimpleName(), field.getName()));
+                throw new IllegalArgumentException(String.format("Failed to parse '%s' into field '%s.%s'", value, field.getDeclaringClass().getSimpleName(), field.getName()), e);
             }
             return null;
         }

@@ -18,7 +18,7 @@ class IntegerConverter implements FieldConverter<Integer> {
                 return 0;
             }
 
-            throw new ExcelModelParseException();
+            throw new ExcelModelParseException(e);
         }
     }
 }

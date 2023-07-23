@@ -15,8 +15,8 @@ class DateConverter implements FieldConverter<Date> {
     public Date tryParse(Field field, ExcelColumn annotation, Object value) throws ExcelModelParseException {
         try {
             return DateUtil.getJavaDate((Double) value);
-        } catch (IllegalArgumentException e) {
-            throw new ExcelModelParseException();
+        } catch (ClassCastException | IllegalArgumentException e) {
+            throw new ExcelModelParseException(e);
         }
     }
 }
