@@ -10,7 +10,8 @@ import java.lang.reflect.Field;
 class IntegerConverter implements FieldConverter<Integer> {
     @Override
     public Integer tryParse(Field field, ExcelColumn annotation, Object value) {
-        return Integer.parseInt(String.valueOf(value));
+        // we do not parse integers because excel returns doubles for numeric type cells
+        return Double.valueOf(String.valueOf(value)).intValue();
     }
 
     @Override
