@@ -3,6 +3,8 @@ package io.github.ferhas.excel_models;
 import io.github.ferhas.excel_models.annotation.ExcelColumn;
 import io.github.ferhas.excel_models.annotation.ExcelObject;
 import io.github.ferhas.excel_models.config.ExcelReaderConfig;
+import io.github.ferhas.excel_models.converter.FieldConverter;
+import io.github.ferhas.excel_models.exception.ExcelFieldParseException;
 import io.github.ferhas.excel_models.exception.ExcelModelException;
 import jakarta.validation.ValidationException;
 import lombok.NonNull;
@@ -42,13 +44,12 @@ public final class ExcelReader {
         List<T> resultList = new ArrayList<>();
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(config.getSheetIndex() - 1);
-            Map<Annotation, Field> fieldMap = ExcelUtils.getFieldMap(type, false);
 
             for (int rowNum = config.getHeaderOffset(); rowNum < sheet.getPhysicalNumberOfRows(); rowNum++) {
                 Row row = sheet.getRow(rowNum);
 
                 if (!isRowEmpty(row)) {
-                    T model = parseModel(fieldMap, type, row);
+                    T model = parseModel(type, row);
 
                     if (afterParse != null) {
                         afterParse.accept(model);
@@ -88,7 +89,8 @@ public final class ExcelReader {
         return true;
     }
 
-    private <T> T parseModel(Map<Annotation, Field> fieldMap, Class<T> type, Row row) throws Exception {
+    private <T> T parseModel(final Class<T> type, final Row row) throws Exception {
+        Map<Annotation, Field> fieldMap = FieldConverterProvider.getFieldMap(type, false);
         T model = type.getDeclaredConstructor().newInstance();
 
         for (Map.Entry<Annotation, Field> entry : fieldMap.entrySet()) {
@@ -98,15 +100,67 @@ public final class ExcelReader {
 
                 if (cell != null) {
                     Field field = entry.getValue();
-                    field.set(model, ExcelUtils.getCellValue(cell, field, annotation));
+                    field.set(model, getCellValue(cell, field, annotation));
                 }
             } else if (entry.getKey() instanceof ExcelObject) {
                 Field field = entry.getValue();
-                Object nestedModel = parseModel(fieldMap, field.getType(), row);
+                Object nestedModel = parseModel(field.getType(), row);
                 field.set(model, nestedModel);
             }
         }
 
         return model;
+    }
+
+    private Object getCellValue(Cell cell, Field field, ExcelColumn annotation) {
+        Object value = getValueByCellType(cell);
+        return tryConvertOrDefault(field, annotation, value);
+    }
+
+    private Object getValueByCellType(Cell cell) {
+        Object value;
+
+        switch (cell.getCellType()) {
+            case ERROR:
+            case FORMULA:
+                return null; // ignore
+            case NUMERIC:
+                value = cell.getNumericCellValue();
+                break;
+            case BOOLEAN:
+                value = cell.getBooleanCellValue();
+                break;
+            case STRING:
+                value = cell.getStringCellValue();
+                if (((String) value).isBlank()) {
+                    value = null;
+                }
+                break;
+            case _NONE:
+            case BLANK:
+            default:
+                value = null;
+        }
+
+        return value;
+    }
+
+    private Object tryConvertOrDefault(Field field, ExcelColumn annotation, Object value) {
+        Object fieldType = field.getType().isEnum() ? Enum.class : field.getType();
+        FieldConverter<?> fieldConverter = FieldConverterProvider.converters.get(fieldType);
+
+        try {
+            if (value != null) {
+                return fieldConverter != null ? fieldConverter.tryParse(field, annotation, value) : value;
+            } else if (annotation.defaultInvalidValues()) {
+                return fieldConverter.getDefaultValue();
+            }
+        } catch (Exception e) {
+            if (!annotation.suppressErrors()) {
+                throw new ExcelFieldParseException(String.format("Failed to parse '%s' into field '%s.%s'", value, field.getDeclaringClass().getSimpleName(), field.getName()), e);
+            }
+        }
+
+        return null;
     }
 }
