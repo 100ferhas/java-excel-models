@@ -22,7 +22,7 @@ import java.util.function.Function;
 public class ExcelWriterConfig {
     private String sheetName;
     private BiConsumer<Workbook, Sheet> headerBuilder;
+    private BiConsumer<Workbook, Sheet> footerBuilder;
     private Function<Workbook, CellStyle> headerStyleBuilder;
     private Function<Workbook, CellStyle> contentStyleBuilder;
-    private Consumer<Sheet> footerBuilder;
 }

@@ -12,7 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 public class ExcelWriter {
@@ -27,13 +27,13 @@ public class ExcelWriter {
         this.config = config;
     }
 
-    public <T> OutputStream write(List<T> models) {
+    public <T> OutputStream write(@NonNull Collection<T> models) {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         write(models, byteArrayOutputStream);
         return byteArrayOutputStream;
     }
 
-    public <T> void write(@NonNull List<T> models, @NonNull OutputStream outputStream) {
+    public <T> void write(@NonNull Collection<T> models, @NonNull OutputStream outputStream) {
         if (models.isEmpty()) {
             return;
         }
@@ -54,7 +54,8 @@ public class ExcelWriter {
                 config.getHeaderBuilder().accept(workbook, sheet);
             } else {
                 CellStyle cellStyle = config.getHeaderStyleBuilder() != null ? config.getHeaderStyleBuilder().apply(workbook) : null;
-                writeHeader(sheet.createRow(sheet.getPhysicalNumberOfRows()), cellStyle, models.get(0));
+                Row headerRow = sheet.createRow(sheet.getPhysicalNumberOfRows());
+                writeHeader(headerRow, cellStyle, models.iterator().next());
             }
 
             int currentRowIndex = sheet.getPhysicalNumberOfRows();
@@ -69,7 +70,7 @@ public class ExcelWriter {
             }
 
             if (config.getFooterBuilder() != null) {
-                config.getFooterBuilder().accept(sheet);
+                config.getFooterBuilder().accept(workbook, sheet);
             }
 
             workbook.write(outputStream);
