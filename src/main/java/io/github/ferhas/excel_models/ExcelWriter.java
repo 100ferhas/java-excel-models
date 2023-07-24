@@ -15,12 +15,12 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 
-public class ExcelWriter {
+public final class ExcelWriter {
     private final ExcelWriterConfig config;
     private CellStyle contentStyle;
 
     public ExcelWriter() {
-        config = new ExcelWriterConfig();
+        this(new ExcelWriterConfig());
     }
 
     public ExcelWriter(ExcelWriterConfig config) {
@@ -39,6 +39,8 @@ public class ExcelWriter {
         }
 
         try (Workbook workbook = new XSSFWorkbook()) {
+            Map<Annotation, Field> fieldMap = ExcelUtils.getFieldMap(Class.forName(models.iterator().next().getClass().getTypeName()), true);
+
             // init content style
             if (config.getContentStyleBuilder() != null) {
                 contentStyle = config.getContentStyleBuilder().apply(workbook);
@@ -55,14 +57,14 @@ public class ExcelWriter {
             } else {
                 CellStyle cellStyle = config.getHeaderStyleBuilder() != null ? config.getHeaderStyleBuilder().apply(workbook) : null;
                 Row headerRow = sheet.createRow(sheet.getPhysicalNumberOfRows());
-                writeHeader(headerRow, cellStyle, models.iterator().next());
+                writeHeader(fieldMap, headerRow, cellStyle, models.iterator().next());
             }
 
             int currentRowIndex = sheet.getPhysicalNumberOfRows();
             for (T model : models) {
                 Row row = sheet.createRow(currentRowIndex++);
                 row.setHeight((short) -1);
-                writeModel(model, row);
+                writeModel(fieldMap, model, row);
             }
 
             for (int i = 0; i < sheet.getRow(0).getLastCellNum(); i++) {
@@ -80,9 +82,7 @@ public class ExcelWriter {
         }
     }
 
-    private <T> void writeHeader(Row row, CellStyle cellStyle, T model) throws Exception {
-        Map<Annotation, Field> fieldMap = ExcelUtils.getFieldMap(Class.forName(model.getClass().getTypeName()), true);
-
+    private <T> void writeHeader(Map<Annotation, Field> fieldMap, Row row, CellStyle cellStyle, T model) throws Exception {
         for (Map.Entry<Annotation, Field> entry : fieldMap.entrySet()) {
             if (entry.getKey() instanceof ExcelColumn) {
                 ExcelColumn annotation = (ExcelColumn) entry.getKey();
@@ -95,14 +95,12 @@ public class ExcelWriter {
                 }
             } else if (entry.getKey() instanceof ExcelObject) {
                 Field field = entry.getValue();
-                writeHeader(row, cellStyle, field.get(model));
+                writeHeader(fieldMap, row, cellStyle, field.get(model));
             }
         }
     }
 
-    private <T> void writeModel(final T model, final Row row) throws Exception {
-        Map<Annotation, Field> fieldMap = ExcelUtils.getFieldMap(Class.forName(model.getClass().getTypeName()), true);
-
+    private <T> void writeModel(Map<Annotation, Field> fieldMap, final T model, final Row row) throws Exception {
         for (Map.Entry<Annotation, Field> entry : fieldMap.entrySet()) {
             if (entry.getKey() instanceof ExcelColumn) {
                 ExcelColumn annotation = (ExcelColumn) entry.getKey();
@@ -116,7 +114,7 @@ public class ExcelWriter {
                 }
             } else if (entry.getKey() instanceof ExcelObject) {
                 Field field = entry.getValue();
-                writeModel(field.get(model), row);
+                writeModel(fieldMap, field.get(model), row);
             }
         }
     }

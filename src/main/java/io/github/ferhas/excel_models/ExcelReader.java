@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class ExcelReader {
+public final class ExcelReader {
     private final ExcelReaderConfig config;
 
     private final ExcelReaderValidator validator;
@@ -34,20 +34,21 @@ public class ExcelReader {
         this.validator = new ExcelReaderValidator();
     }
 
-    public final <T> List<T> parse(@NonNull InputStream inputStream, final Class<T> type) {
+    public <T> List<T> parse(@NonNull InputStream inputStream, final Class<T> type) {
         return parse(inputStream, type, null);
     }
 
-    public final <T> List<T> parse(@NonNull InputStream inputStream, @NonNull Class<T> type, Consumer<T> afterParse) {
+    public <T> List<T> parse(@NonNull InputStream inputStream, @NonNull Class<T> type, Consumer<T> afterParse) {
         List<T> resultList = new ArrayList<>();
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(config.getSheetIndex() - 1);
+            Map<Annotation, Field> fieldMap = ExcelUtils.getFieldMap(type, false);
 
             for (int rowNum = config.getHeaderOffset(); rowNum < sheet.getPhysicalNumberOfRows(); rowNum++) {
                 Row row = sheet.getRow(rowNum);
 
                 if (!isRowEmpty(row)) {
-                    T model = parseModel(type, row);
+                    T model = parseModel(fieldMap, type, row);
 
                     if (afterParse != null) {
                         afterParse.accept(model);
@@ -87,8 +88,7 @@ public class ExcelReader {
         return true;
     }
 
-    private <T> T parseModel(final Class<T> type, final Row row) throws Exception {
-        Map<Annotation, Field> fieldMap = ExcelUtils.getFieldMap(type, false);
+    private <T> T parseModel(Map<Annotation, Field> fieldMap, Class<T> type, Row row) throws Exception {
         T model = type.getDeclaredConstructor().newInstance();
 
         for (Map.Entry<Annotation, Field> entry : fieldMap.entrySet()) {
@@ -102,7 +102,7 @@ public class ExcelReader {
                 }
             } else if (entry.getKey() instanceof ExcelObject) {
                 Field field = entry.getValue();
-                Object nestedModel = parseModel(field.getType(), row);
+                Object nestedModel = parseModel(fieldMap, field.getType(), row);
                 field.set(model, nestedModel);
             }
         }
