@@ -3,7 +3,7 @@ package io.github.ferhas.excel_models;
 import io.github.ferhas.excel_models.annotation.ExcelColumn;
 import io.github.ferhas.excel_models.annotation.ExcelObject;
 import io.github.ferhas.excel_models.converter.FieldConverter;
-import io.github.ferhas.excel_models.exception.ExcelModelParseException;
+import io.github.ferhas.excel_models.exception.ExcelFieldParseException;
 import org.apache.poi.ss.usermodel.Cell;
 
 import java.lang.annotation.Annotation;
@@ -63,14 +63,18 @@ abstract class ExcelUtils {
     }
 
     private static Object tryConvert(Field field, ExcelColumn annotation, Object value) {
+        Object fieldType = field.getType().isEnum() ? Enum.class : field.getType();
+        FieldConverter<?> fieldConverter = FieldConverterProvider.converters.get(fieldType);
+
         try {
-            Object fieldType = field.getType().isEnum() ? Enum.class : field.getType();
-            FieldConverter<?> fieldConverter = FieldConverterProvider.converters.get(fieldType);
-            return fieldConverter == null ? value : fieldConverter.tryParse(field, annotation, value);
+            return fieldConverter != null ? fieldConverter.tryParse(field, annotation, value) : value;
         } catch (Exception e) {
             if (!annotation.suppressErrors()) {
-                throw new IllegalArgumentException(String.format("Failed to parse '%s' into field '%s.%s'", value, field.getDeclaringClass().getSimpleName(), field.getName()), e);
+                throw new ExcelFieldParseException(String.format("Failed to parse '%s' into field '%s.%s'", value, field.getDeclaringClass().getSimpleName(), field.getName()), e);
+            } else if (annotation.defaultInvalidValues()) {
+                return fieldConverter.getDefaultValue();
             }
+
             return null;
         }
     }

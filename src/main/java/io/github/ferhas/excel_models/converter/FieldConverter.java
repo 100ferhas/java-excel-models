@@ -6,4 +6,8 @@ import java.lang.reflect.Field;
 
 public interface FieldConverter<T> {
     T tryParse(Field field, ExcelColumn annotation, Object value);
+
+    default T getDefaultValue() {
+        return null;
+    }
 }
