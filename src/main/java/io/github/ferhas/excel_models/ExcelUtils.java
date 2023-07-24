@@ -67,7 +67,7 @@ abstract class ExcelUtils {
             Object fieldType = field.getType().isEnum() ? Enum.class : field.getType();
             FieldConverter<?> fieldConverter = FieldConverterProvider.converters.get(fieldType);
             return fieldConverter == null ? value : fieldConverter.tryParse(field, annotation, value);
-        } catch (ExcelModelParseException e) {
+        } catch (Exception e) {
             if (!annotation.suppressErrors()) {
                 throw new IllegalArgumentException(String.format("Failed to parse '%s' into field '%s.%s'", value, field.getDeclaringClass().getSimpleName(), field.getName()), e);
             }
