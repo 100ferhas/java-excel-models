@@ -21,13 +21,13 @@ when converting data from Excel files into models.
 <dependency>
   <groupId>io.github.100ferhas</groupId>
   <artifactId>java-excel-models</artifactId>
-  <version>0.1</version>
+  <version>0.2</version>
 </dependency>
 ```
 
 ### Gradle
 ```text
-implementation 'io.github.100ferhas:java-excel-models:0.1'
+implementation 'io.github.100ferhas:java-excel-models:0.2'
 ```
 
 

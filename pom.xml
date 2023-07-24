@@ -6,7 +6,7 @@
 
     <groupId>io.github.100ferhas</groupId>
     <artifactId>java-excel-models</artifactId>
-    <version>0.1</version>
+    <version>0.2</version>
 
     <name>random-users-generator</name>
     <description>Library to generate random fake user data</description>
