@@ -1,3 +1,5 @@
+[![Publish to Maven Central](https://github.com/100ferhas/java-excel-models/actions/workflows/release.yml/badge.svg)](https://github.com/100ferhas/java-excel-models/actions/workflows/release.yml)
+
 # Java Excel Models Converter
 
 This is a library to convert Excel files into POJO and vice-versa using annotations on Java classes.
