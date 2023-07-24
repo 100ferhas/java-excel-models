@@ -9,9 +9,31 @@ The library
 supports [Model validation annotations](https://jakarta.ee/specifications/bean-validation/3.0/apidocs/jakarta/validation/constraints/package-summary.html)
 when converting data from Excel files into models.
 
-## Usage
 
-This is a demo class showing different ways on how you can use this library.
+
+
+## Installation
+
+### Maven
+```xml
+<dependency>
+  <groupId>io.github.100ferhas</groupId>
+  <artifactId>java-excel-models</artifactId>
+  <version>0.1</version>
+</dependency>
+```
+
+### Gradle
+```text
+implementation 'io.github.100ferhas:java-excel-models:0.1'
+```
+
+
+
+
+## Usage
+After installation, you can start using the library to read Excel files into Java models, or to write Java models into 
+Excel files. Look at the following demo class showing different ways on how you can use the library.
 
 ```java
 import java.util.function.Consumer;
@@ -85,6 +107,9 @@ public class Demo {
 }
 ```
 
+
+
+
 ## Annotations
 
 ### @ExcelColumn
@@ -115,6 +140,9 @@ before reading data from files.
 | Parameter    | Type       | Required | Description                                       | Default Value | Read or Write usage |
 |--------------|------------|----------|---------------------------------------------------|---------------|---------------------|
 | **forTypes** | Class<?>[] | yes      | Destination data types to apply this converter to |               | Read                |
+
+
+
 
 ## Field Converters
 
@@ -180,6 +208,9 @@ public class AppInit {
 
 **NB: IF YOU REGISTER A CUSTOM CONVERTER ANNOTATED WITH SAME TYPE AS A PRE-DEFINED ONE, YOU WILL OVERRIDE THE DEFAULT.**
 
+
+
+
 ## Example Models
 
 ### Book
@@ -237,6 +268,9 @@ public enum AuthorGender {
     FEMALE
 }
 ```
+
+
+
 
 **NOTE: This library is still under development!**
 
