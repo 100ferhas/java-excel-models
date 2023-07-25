@@ -6,7 +6,7 @@
 
     <groupId>io.github.100ferhas</groupId>
     <artifactId>java-excel-models</artifactId>
-    <version>0.2</version>
+    <version>0.3</version>
 
     <name>random-users-generator</name>
     <description>Java library to convert excel files from and to Java models</description>

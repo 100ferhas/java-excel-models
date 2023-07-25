@@ -21,13 +21,13 @@ when converting data from Excel files into models.
 <dependency>
   <groupId>io.github.100ferhas</groupId>
   <artifactId>java-excel-models</artifactId>
-  <version>0.2</version>
+  <version>0.3</version>
 </dependency>
 ```
 
 ### Gradle
 ```text
-implementation 'io.github.100ferhas:java-excel-models:0.2'
+implementation 'io.github.100ferhas:java-excel-models:0.3'
 ```
 
 
@@ -38,8 +38,6 @@ After installation, you can start using the library to read Excel files into Jav
 Excel files. Look at the following demo class showing different ways on how you can use the library.
 
 ```java
-import java.util.function.Consumer;
-
 public class Demo {
 
     public void readFile() throws Exception {
@@ -187,9 +185,6 @@ If needed, you can also override other methods.
 For example, if you want to define a `FieldConverter` for your `BigInteger` fields, create a class as follows:
 
 ```java
-
-import java.math.BigInteger;
-
 @TypeConverter(forTypes = {BigInteger.class})
 public class CustomFieldConverter implements FieldConverter<BigInteger> {
     @Override
