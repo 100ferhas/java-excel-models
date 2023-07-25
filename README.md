@@ -118,15 +118,14 @@ public class Demo {
 
 Annotation to be used on object properties to map with Excel file structure and can define other behaviour.
 
-| Parameter                | Type    | Required | Description                                                   | Default Value | Read or Write usage |
-|--------------------------|---------|----------|---------------------------------------------------------------|---------------|---------------------|
-| **index**                | int     | yes      | Index of the column in the file                               |               | Both                |
-| **title**                | String  | no       | Title of the column created during write file                 | field name    | Write               |
-| **defaultInvalidValues** | boolean | no       | Assign a default value to an invalid data in a column **(*)** | false         | Read                |
-| **onlyExport**           | boolean | no       | Mark the field as "export only" ignoring it during read       | false         | Write               |
-| **suppressErrors**       | boolean | no       | Suppress errors parsing the field **(*)**                     | false         | Read                |
+| Parameter                | Type    | Required | Description                                             | Default Value | Read or Write usage |
+|--------------------------|---------|----------|---------------------------------------------------------|---------------|---------------------|
+| **index**                | int     | yes      | Index of the column in the file                         |               | Both                |
+| **title**                | String  | no       | Title of the column created during write file           | field name    | Write               |
+| **defaultInvalidValues** | boolean | no       | Assign a default value to an invalid data in a column   | false         | Read                |
+| **onlyExport**           | boolean | no       | Mark the field as "export only" ignoring it during read | false         | Write               |
+| **suppressErrors**       | boolean | no       | Suppress errors parsing the field                       | false         | Read                |
 
-**(*) If you configure to not suppress errors, it won't assign a default value to the field also if configured so.**
 
 ### @ExcelObject
 
