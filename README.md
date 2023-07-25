@@ -159,9 +159,14 @@ These are the pre-defined converters, more converter will be added over time (if
 | `boolean`/`Boolean` | `false`                              |
 | `int`/`Integer`     | 0                                    |
 | `double`/`Double`   | 0                                    |
+| `long`/`Long`       | 0                                    |
+| `char`/`Character`  | `null`                               |
+| `BigInteger`        | `BigInteger.ZERO`                    |
+| `BigDecimal`        | `BigDecimal.ZERO`                    |
 | `Date`              | `null`                               |
 | `Enum`              | `null`                               |
 | `UUID`              | `null`                               |
+
 
 
 You can define your own additional field converter and register it on your application startup, for example if you want 
@@ -209,7 +214,18 @@ public class AppInit {
 
 **NB: IF YOU REGISTER A CUSTOM CONVERTER ANNOTATED WITH SAME TYPE AS A PRE-DEFINED ONE, YOU WILL OVERRIDE THE DEFAULT.**
 
-
+A Converter for a class can be also defined, for example you can convert your author instance based on the data in that cell.
+Let think that you have an ID in that column, all you need to do is just to define your own [FieldConverter](#field-converters)
+with your own conversion logic.
+```java
+public class Book {
+    
+    // ... other omitted fields
+    
+    @ExcelColumn(index = 6)
+    private Author author;
+}
+```
 
 
 ## Example Models
