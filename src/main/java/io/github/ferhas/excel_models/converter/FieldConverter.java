@@ -10,4 +10,8 @@ public interface FieldConverter<T> {
     default T getDefaultValue() {
         return null;
     }
+
+    default String toExcelValue(Object value) {
+        return value.toString();
+    }
 }

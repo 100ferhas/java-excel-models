@@ -146,8 +146,7 @@ public final class ExcelReader {
     }
 
     private Object tryConvertOrDefault(Field field, ExcelColumn annotation, Object value) {
-        Object fieldType = field.getType().isEnum() ? Enum.class : field.getType();
-        FieldConverter<?> fieldConverter = FieldConverterProvider.converters.get(fieldType);
+        FieldConverter<?> fieldConverter = FieldConverterProvider.getFieldConverter(field);
 
         try {
             if (value != null) {

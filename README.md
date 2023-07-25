@@ -116,7 +116,8 @@ public class Demo {
 
 ### @ExcelColumn
 
-Annotation to be used on object properties to map with Excel file structure and can define other behaviour.
+Annotation to be used on object's attributes to map it with the Excel file structure. You can also define other behaviours,
+for all the available configurations refer to the following table.
 
 | Parameter                | Type    | Required | Description                                             | Default Value | Read or Write usage |
 |--------------------------|---------|----------|---------------------------------------------------------|---------------|---------------------|
@@ -140,14 +141,18 @@ before reading data from files.
 
 | Parameter    | Type       | Required | Description                                       | Default Value | Read or Write usage |
 |--------------|------------|----------|---------------------------------------------------|---------------|---------------------|
-| **forTypes** | Class<?>[] | yes      | Destination data types to apply this converter to |               | Read                |
+| **forTypes** | Class<?>[] | yes      | Destination data types to apply this converter to |               | Both                |
 
 
 
 
 ## Field Converters
 
-There are some already defined `FieldConverters` to try to convert value from a data cell into an object attribute type.
+`FieldConverter` interface is the abstraction of the classes that will convert that specific data type from and to 
+Excel columns. Those classes will be used to convert a cell content to the specific data type you have in your model,
+and to convert your data type you have in your model to a `String` value to be written in the Excel file.
+
+There are already some defined `FieldConverter` to help you to convert value from a data cell into an object attribute type.
 
 For example, if you want to read a cell that contains `UUID` and parse it directly into the model field declared
 as `UUID` there is already a converter handling this.
@@ -155,7 +160,7 @@ as `UUID` there is already a converter handling this.
 These are the pre-defined converters, more converter will be added over time (if you want to contribute just create a PR):
 
 | Data Type           | Default parsed value (if configured) |
-|---------------------|--------------------------------------|
+|---------------------|:-------------------------------------|
 | `boolean`/`Boolean` | `false`                              |
 | `int`/`Integer`     | 0                                    |
 | `double`/`Double`   | 0                                    |
@@ -167,14 +172,19 @@ These are the pre-defined converters, more converter will be added over time (if
 | `Enum`              | `null`                               |
 | `UUID`              | `null`                               |
 
+You can create your own additional field converter and register it on your application startup, you must annotate it 
+with [@TypeConverter](#typeconverter) annotation, and it also must implement `FieldConverter` interface to override 
+the `tryParse()` method where you will define your own conversion logic. 
 
+If needed, you can also override other methods.
 
-You can define your own additional field converter and register it on your application startup, for example if you want 
-to define a converter for your `BigInteger` fields, create a class as below.
+| Method            | Description                                                         | Default                      | Read or Write usage |
+|-------------------|---------------------------------------------------------------------|------------------------------|---------------------|
+| `tryParse`        | The method that must be implemented to define your conversion logic | no, must be implemented      | Read                |
+| `getDefaultValue` | The method to define your own default return value                  | yes, returns null            | Read                |
+| `toExcelValue`    | The method to define your own value to be written in the Excel file | yes, returns to `toString()` | Write               |
 
-You must annotate it with [@TypeConverter](#typeconverter) annotation, and it also must implement `FieldConverter`
-interface to make it override the method where you will define your own conversion logic, and, if you want, the method
-where you will define your own default return value.
+For example, if you want to define a `FieldConverter` for your `BigInteger` fields, create a class as follows:
 
 ```java
 
@@ -192,6 +202,13 @@ public class CustomFieldConverter implements FieldConverter<BigInteger> {
     @Override
     public BigInteger getDefaultValue() {
         return BigInteger.ZERO;
+    }
+
+    // if you want to convert your data type to be written in the Excel
+    @Override
+    public String toExcelValue(Object value) {
+        // for example if we want to write a price in this column
+        return "€" + ((BigInteger) value).doubleValue();
     }
 }
 ```
@@ -214,9 +231,10 @@ public class AppInit {
 
 **NB: IF YOU REGISTER A CUSTOM CONVERTER ANNOTATED WITH SAME TYPE AS A PRE-DEFINED ONE, YOU WILL OVERRIDE THE DEFAULT.**
 
-A Converter for a class can be also defined, for example you can convert your author instance based on the data in that cell.
+A `FieldConverter` for a class can be also defined, for example you can convert your author instance based on the data in that cell.
 Let think that you have an ID in that column, all you need to do is just to define your own [FieldConverter](#field-converters)
 with your own conversion logic.
+
 ```java
 public class Book {
     
@@ -226,6 +244,8 @@ public class Book {
     private Author author;
 }
 ```
+
+
 
 
 ## Example Models
@@ -246,13 +266,16 @@ public class Book {
 
     @ExcelColumn(index = 4, suppressErrors = true)
     private Date publishedOn;
-
+    
     @ExcelColumn(index = 5, title = "Number of pages", suppressErrors = true)
     private Integer numberOfPages;
 
     @Valid
     @ExcelObject
     private Author author;
+    
+    // unmapped attribute, will be just ignored during both read and write
+    private String soldBy;
 }
 ```
 

@@ -15,12 +15,17 @@ import java.util.Set;
 
 @SuppressWarnings({"rawtypes"})
 public abstract class FieldConverterProvider {
-    static final Map<Class<?>, FieldConverter<?>> converters = new HashMap<>();
+    private static final Map<Class<?>, FieldConverter<?>> converters = new HashMap<>();
 
     static {
         String packageName = FieldConverterProvider.class.getPackage().getName();
         Set<Class<? extends FieldConverter>> typesAnnotatedWith = new Reflections(packageName).getSubTypesOf(FieldConverter.class);
         addConverters(typesAnnotatedWith);
+    }
+
+    static FieldConverter<?> getFieldConverter(Field field) {
+        Object fieldType = field.getType().isEnum() ? Enum.class : field.getType();
+        return converters.get(fieldType);
     }
 
     static <E> Map<Annotation, Field> getFieldMap(Class<E> type, boolean isExport) {

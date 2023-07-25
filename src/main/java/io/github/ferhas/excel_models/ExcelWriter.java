@@ -3,6 +3,7 @@ package io.github.ferhas.excel_models;
 import io.github.ferhas.excel_models.annotation.ExcelColumn;
 import io.github.ferhas.excel_models.annotation.ExcelObject;
 import io.github.ferhas.excel_models.config.ExcelWriterConfig;
+import io.github.ferhas.excel_models.converter.FieldConverter;
 import io.github.ferhas.excel_models.exception.ExcelModelException;
 import lombok.NonNull;
 import org.apache.poi.ss.usermodel.*;
@@ -112,7 +113,8 @@ public final class ExcelWriter {
 
                 Object value = field.get(model);
                 if (value != null) {
-                    cell.setCellValue(value.toString());
+                    FieldConverter<?> fieldConverter = FieldConverterProvider.getFieldConverter(field);
+                    cell.setCellValue(fieldConverter != null ? fieldConverter.toExcelValue(value) : value.toString());
                 }
             } else if (entry.getKey() instanceof ExcelObject) {
                 Field field = entry.getValue();
