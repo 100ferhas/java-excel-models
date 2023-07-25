@@ -9,7 +9,7 @@
     <version>0.2</version>
 
     <name>random-users-generator</name>
-    <description>Library to generate random fake user data</description>
+    <description>Java library to convert excel files from and to Java models</description>
     <url>https://github.com/100ferhas/java-excel-models</url>
     <scm>
         <connection>https://github.com/100ferhas/java-excel-models.git</connection>
