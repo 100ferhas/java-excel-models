@@ -2,6 +2,7 @@ package io.github.ferhas.excel_models.converter;
 
 import io.github.ferhas.excel_models.annotation.ExcelColumn;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 
 public interface FieldConverter<T> {
@@ -11,7 +12,7 @@ public interface FieldConverter<T> {
         return null;
     }
 
-    default String toExcelValue(Object value) {
-        return value.toString();
+    default String toExcelValue(@Nullable Object value) {
+        return value != null ? value.toString() : null;
     }
 }

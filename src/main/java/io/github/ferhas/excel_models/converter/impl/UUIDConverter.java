@@ -8,7 +8,7 @@ import java.lang.reflect.Field;
 import java.util.UUID;
 
 @TypeConverter(forTypes = {UUID.class})
-class UUIDConverter implements FieldConverter<UUID> {
+public class UUIDConverter implements FieldConverter<UUID> {
     @Override
     public UUID tryParse(Field field, ExcelColumn annotation, Object value) {
         return UUID.fromString(String.valueOf(value));

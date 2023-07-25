@@ -9,7 +9,7 @@ import java.lang.reflect.Field;
 import java.time.Instant;
 
 @TypeConverter(forTypes = {Instant.class})
-class InstantConverter implements FieldConverter<Instant> {
+public class InstantConverter implements FieldConverter<Instant> {
     @Override
     public Instant tryParse(Field field, ExcelColumn annotation, Object value) {
         return DateUtil.getJavaDate((Double) value).toInstant();

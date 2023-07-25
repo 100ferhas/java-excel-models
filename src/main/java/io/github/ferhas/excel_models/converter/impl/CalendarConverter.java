@@ -9,7 +9,7 @@ import java.lang.reflect.Field;
 import java.util.Calendar;
 
 @TypeConverter(forTypes = {Calendar.class})
-class CalendarConverter implements FieldConverter<Calendar> {
+public class CalendarConverter implements FieldConverter<Calendar> {
     @Override
     public Calendar tryParse(Field field, ExcelColumn annotation, Object value) {
         Calendar calendar = Calendar.getInstance();

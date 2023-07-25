@@ -6,6 +6,7 @@ import io.github.ferhas.excel_models.config.ExcelWriterConfig;
 import io.github.ferhas.excel_models.converter.FieldConverter;
 import io.github.ferhas.excel_models.exception.ExcelModelException;
 import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -18,7 +19,6 @@ import java.util.Map;
 
 public final class ExcelWriter {
     private final ExcelWriterConfig config;
-    private CellStyle contentStyle;
 
     public ExcelWriter() {
         this(new ExcelWriterConfig());
@@ -40,17 +40,9 @@ public final class ExcelWriter {
         }
 
         try (Workbook workbook = new XSSFWorkbook()) {
-            // init content style
-            if (config.getContentStyleBuilder() != null) {
-                contentStyle = config.getContentStyleBuilder().apply(workbook);
-            } else {
-                contentStyle = workbook.createCellStyle();
-                contentStyle.setWrapText(true);
-            }
-
             Sheet sheet = config.getSheetName() != null ? workbook.createSheet(config.getSheetName()) : workbook.createSheet();
 
-            // create header or call consumer created by user
+            // HEADER
             if (config.getHeaderBuilder() != null) {
                 config.getHeaderBuilder().accept(workbook, sheet);
             } else {
@@ -59,19 +51,22 @@ public final class ExcelWriter {
                 writeHeader(headerRow, cellStyle, models.iterator().next());
             }
 
+            // CONTENT
             int currentRowIndex = sheet.getPhysicalNumberOfRows();
             for (T model : models) {
                 Row row = sheet.createRow(currentRowIndex++);
+                CellStyle cellStyle = config.getContentRowStyleBuilder().apply(workbook, row.getRowNum());
+                writeModel(model, row, cellStyle);
                 row.setHeight((short) -1);
-                writeModel(model, row);
+            }
+
+            // FOOTER
+            if (config.getFooterBuilder() != null) {
+                config.getFooterBuilder().accept(workbook, sheet);
             }
 
             for (int i = 0; i < sheet.getRow(0).getLastCellNum(); i++) {
                 sheet.autoSizeColumn(i, true);
-            }
-
-            if (config.getFooterBuilder() != null) {
-                config.getFooterBuilder().accept(workbook, sheet);
             }
 
             workbook.write(outputStream);
@@ -89,7 +84,11 @@ public final class ExcelWriter {
                 ExcelColumn annotation = (ExcelColumn) entry.getKey();
                 Field field = entry.getValue();
                 Cell cell = row.createCell(annotation.index() - 1);
-                cell.setCellValue(annotation.title() != null && !annotation.title().isBlank() ? annotation.title() : field.getName());
+                String headerTitle = annotation.title() == null || annotation.title().isBlank() ?
+                        StringUtils.capitalize(StringUtils.join(StringUtils.splitByCharacterTypeCamelCase(field.getName()), StringUtils.SPACE)) :
+                        annotation.title();
+
+                cell.setCellValue(headerTitle);
 
                 if (cellStyle != null) {
                     cell.setCellStyle(cellStyle);
@@ -101,7 +100,7 @@ public final class ExcelWriter {
         }
     }
 
-    private <T> void writeModel(final T model, final Row row) throws Exception {
+    private <T> void writeModel(final T model, final Row row, CellStyle cellStyle) throws Exception {
         Map<Annotation, Field> fieldMap = FieldConverterProvider.getFieldMap(Class.forName(model.getClass().getTypeName()), true);
 
         for (Map.Entry<Annotation, Field> entry : fieldMap.entrySet()) {
@@ -109,16 +108,23 @@ public final class ExcelWriter {
                 ExcelColumn annotation = (ExcelColumn) entry.getKey();
                 Field field = entry.getValue();
                 Cell cell = row.createCell(annotation.index() - 1);
-                cell.setCellStyle(contentStyle);
+                cell.setCellStyle(cellStyle);
 
                 Object value = field.get(model);
-                if (value != null) {
-                    FieldConverter<?> fieldConverter = FieldConverterProvider.getFieldConverter(field);
-                    cell.setCellValue(fieldConverter != null ? fieldConverter.toExcelValue(value) : value.toString());
+                FieldConverter<?> fieldConverter = FieldConverterProvider.getFieldConverter(field);
+
+                String cellValue = null;
+                if (fieldConverter != null) {
+                    cellValue = fieldConverter.toExcelValue(value);
+                } else if (value != null) {
+                    cellValue = value.toString();
                 }
+
+                cell.setCellValue(cellValue);
+
             } else if (entry.getKey() instanceof ExcelObject) {
                 Field field = entry.getValue();
-                writeModel(field.get(model), row);
+                writeModel(field.get(model), row, cellStyle);
             }
         }
     }

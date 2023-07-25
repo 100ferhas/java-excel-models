@@ -7,7 +7,7 @@ import io.github.ferhas.excel_models.converter.FieldConverter;
 import java.lang.reflect.Field;
 
 @TypeConverter(forTypes = {long.class, Long.class})
-class LongConverter implements FieldConverter<Long> {
+public class LongConverter implements FieldConverter<Long> {
     @Override
     public Long tryParse(Field field, ExcelColumn annotation, Object value) {
         return Double.valueOf(String.valueOf(value)).longValue();

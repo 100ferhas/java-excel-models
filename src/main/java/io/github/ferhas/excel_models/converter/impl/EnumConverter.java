@@ -8,7 +8,7 @@ import io.github.ferhas.excel_models.exception.ExcelFieldParseException;
 import java.lang.reflect.Field;
 
 @TypeConverter(forTypes = {Enum.class})
-class EnumConverter implements FieldConverter<Enum<?>> {
+public class EnumConverter implements FieldConverter<Enum<?>> {
     @Override
     public Enum<?> tryParse(Field field, ExcelColumn annotation, Object value) {
         Class<?> type = field.getType();

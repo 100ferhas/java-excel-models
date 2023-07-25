@@ -7,7 +7,7 @@ import io.github.ferhas.excel_models.converter.FieldConverter;
 import java.lang.reflect.Field;
 
 @TypeConverter(forTypes = {Integer.class, int.class})
-class IntegerConverter implements FieldConverter<Integer> {
+public class IntegerConverter implements FieldConverter<Integer> {
     @Override
     public Integer tryParse(Field field, ExcelColumn annotation, Object value) {
         // we do not parse integers because excel returns doubles for numeric type cells

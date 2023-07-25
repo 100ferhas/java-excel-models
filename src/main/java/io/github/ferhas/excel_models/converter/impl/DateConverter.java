@@ -9,7 +9,7 @@ import java.lang.reflect.Field;
 import java.util.Date;
 
 @TypeConverter(forTypes = {Date.class})
-class DateConverter implements FieldConverter<Date> {
+public class DateConverter implements FieldConverter<Date> {
     @Override
     public Date tryParse(Field field, ExcelColumn annotation, Object value) {
         return DateUtil.getJavaDate((Double) value);

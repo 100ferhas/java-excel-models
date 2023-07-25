@@ -24,8 +24,16 @@ public abstract class FieldConverterProvider {
     }
 
     static FieldConverter<?> getFieldConverter(Field field) {
-        Object fieldType = field.getType().isEnum() ? Enum.class : field.getType();
-        return converters.get(fieldType);
+        // before try to get a specific converter (for Enums)
+        Class<?> fieldType = field.getType();
+        FieldConverter<?> fieldConverter = converters.get(fieldType);
+
+        // if a specific converter was not found, we retrieve the generic Enum converter
+        if (fieldConverter == null && fieldType.isEnum()) {
+            fieldConverter = converters.get(Enum.class);
+        }
+
+        return fieldConverter;
     }
 
     static <E> Map<Annotation, Field> getFieldMap(Class<E> type, boolean isExport) {
@@ -65,7 +73,11 @@ public abstract class FieldConverterProvider {
 
     private static void addConverters(Set<Class<? extends FieldConverter>> typesAnnotatedWith) {
         typesAnnotatedWith.forEach(clazz -> {
-            TypeConverter annotation = clazz.getAnnotation(TypeConverter.class);
+            TypeConverter annotation = getAnnotations(clazz);
+
+            if (annotation == null) {
+                throw new IllegalStateException(String.format("Expected @%s annotation on %s class!", TypeConverter.class.getSimpleName(), clazz.getSimpleName()));
+            }
 
             for (Class<?> type : annotation.forTypes()) {
                 try {
@@ -78,5 +90,15 @@ public abstract class FieldConverterProvider {
                 }
             }
         });
+    }
+
+    private static TypeConverter getAnnotations(Class<?> classType) {
+        while (!classType.getName().equals(Object.class.getName())) {
+            if (classType.isAnnotationPresent(TypeConverter.class)) {
+                return classType.getAnnotation(TypeConverter.class);
+            }
+            classType = classType.getSuperclass();
+        }
+        return null;
     }
 }

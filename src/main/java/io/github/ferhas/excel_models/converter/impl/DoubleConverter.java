@@ -7,7 +7,7 @@ import io.github.ferhas.excel_models.converter.FieldConverter;
 import java.lang.reflect.Field;
 
 @TypeConverter(forTypes = {Double.class, double.class})
-class DoubleConverter implements FieldConverter<Double> {
+public class DoubleConverter implements FieldConverter<Double> {
     @Override
     public Double tryParse(Field field, ExcelColumn annotation, Object value) {
         return Double.parseDouble(String.valueOf(value));

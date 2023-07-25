@@ -21,13 +21,13 @@ when converting data from Excel files into models.
 <dependency>
   <groupId>io.github.100ferhas</groupId>
   <artifactId>java-excel-models</artifactId>
-  <version>0.3</version>
+  <version>0.4</version>
 </dependency>
 ```
 
 ### Gradle
 ```text
-implementation 'io.github.100ferhas:java-excel-models:0.3'
+implementation 'io.github.100ferhas:java-excel-models:0.4'
 ```
 
 
@@ -69,22 +69,31 @@ public class Demo {
         // your models
         List<Book> books = List.of();
 
-        // create a writer with optional configuration
+        // create a writer with OPTIONAL configuration
         ExcelWriter writer = new ExcelWriter(
                 new ExcelWriterConfig()
                         .withSheetName("Sheet Name")
-                        .withHeaderStyleBuilder((workbook) -> {
-                            // build style for header
+                        .withHeaderStyleBuilder(workbook -> {
+                            // build custom style for header
                             // NOTE: not used when headerBuilder is provided
                             CellStyle cellStyle = workbook.createCellStyle();
-                            cellStyle.setWrapText(true);
+                            cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                            cellStyle.setFillForegroundColor(IndexedColors.ORANGE.getIndex());
                             return cellStyle;
                         })
-                        .withContentStyleBuilder((workbook) -> {
-                            // build style for content cells
-                            CellStyle cellStyle = workbook.createCellStyle();
-                            cellStyle.setWrapText(true);
-                            return cellStyle;
+                        .withContentRowStyleBuilder((workbook, rowNum) -> {
+                            // build custom style for content
+                            // for example, if you want to style differently odd and even rows
+                            CellStyle style = workbook.createCellStyle();
+                            style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+                            if (rowNum % 2 == 0) {
+                                style.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+                            } else {
+                                style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+                            }
+
+                            return style;
                         })
                         .withHeaderBuilder((workbook, sheet) -> {
                             // custom-built header
@@ -157,18 +166,22 @@ as `UUID` there is already a converter handling this.
 
 These are the pre-defined converters, more converter will be added over time (if you want to contribute just create a PR):
 
-| Data Type           | Default parsed value (if configured) |
-|---------------------|:-------------------------------------|
-| `boolean`/`Boolean` | `false`                              |
-| `int`/`Integer`     | 0                                    |
-| `double`/`Double`   | 0                                    |
-| `long`/`Long`       | 0                                    |
-| `char`/`Character`  | `null`                               |
-| `BigInteger`        | `BigInteger.ZERO`                    |
-| `BigDecimal`        | `BigDecimal.ZERO`                    |
-| `Date`              | `null`                               |
-| `Enum`              | `null`                               |
-| `UUID`              | `null`                               |
+| Converter Class         | Data Type           | Default parsed value (if configured) |
+|-------------------------|---------------------|--------------------------------------|
+| No Converter (built-in) | `boolean`/`Boolean` | `false`                              |
+| `IntegerConverter`      | `int`/`Integer`     | 0                                    |
+| `DoubleConverter`       | `double`/`Double`   | 0                                    |
+| `LongConverter`         | `long`/`Long`       | 0                                    |
+| `CharacterConverter`    | `char`/`Character`  | `null`                               |
+| `BigIntegerConverter`   | `BigInteger`        | `BigInteger.ZERO`                    |
+| `BigDecimalConverter`   | `BigDecimal`        | `BigDecimal.ZERO`                    |
+| `EnumConverter`         | `Enum`              | `null`                               |
+| `UUIDConverter`         | `UUID`              | `null`                               |
+| `DateConverter`         | `Date`              | `null`                               |
+| `CalendarConverter`     | `Calendar`          | `null`                               |
+| `InstantConverter`      | `Instant`           | `null`                               |
+
+**NOTE: `EnumConverter` will be used as a fallback only if a more specific enum converter was not found**
 
 You can create your own additional field converter and register it on your application startup, you must annotate it 
 with [@TypeConverter](#typeconverter) annotation, and it also must implement `FieldConverter` interface to override 
@@ -176,11 +189,11 @@ the `tryParse()` method where you will define your own conversion logic.
 
 If needed, you can also override other methods.
 
-| Method            | Description                                                         | Default                      | Read or Write usage |
-|-------------------|---------------------------------------------------------------------|------------------------------|---------------------|
-| `tryParse`        | The method that must be implemented to define your conversion logic | no, must be implemented      | Read                |
-| `getDefaultValue` | The method to define your own default return value                  | yes, returns null            | Read                |
-| `toExcelValue`    | The method to define your own value to be written in the Excel file | yes, returns to `toString()` | Write               |
+| Method            | Description                                                         | Default                              | Read or Write usage |
+|-------------------|---------------------------------------------------------------------|--------------------------------------|---------------------|
+| `tryParse`        | The method that must be implemented to define your conversion logic | no, must be implemented              | Read                |
+| `getDefaultValue` | The method to define your own default return value                  | yes, returns null                    | Read                |
+| `toExcelValue`    | The method to define your own value to be written in the Excel file | yes, returns to `toString()` or null | Write               |
 
 For example, if you want to define a `FieldConverter` for your `BigInteger` fields, create a class as follows:
 
@@ -208,8 +221,23 @@ public class CustomFieldConverter implements FieldConverter<BigInteger> {
 }
 ```
 
-Then you just need to register the new converter when your application starts or at least before reading data from a
-file:
+If you prefer and need to, you can also extend an existing `FieldConverter` and override methods you want to modify.
+For example lets extend the `CalendarConverter` to make it convert as we want, in this case to a formatted date:
+```java
+public class MyCalendarConverter extends CalendarConverter {
+
+    @Override
+    public String toExcelValue(@Nullable Object value) {
+        return value != null ? DateFormatUtils.format((Calendar) value, "dd-MM-yyyy") : null;
+    }
+}
+```
+
+**NOTE: when you extend an existing converter is not needed to annotate it with 
+[@TypeConverter](#typeconverter) annotation**
+
+After create the new converter (also if you're extending an existing one) you just need to register it when your 
+application starts or at least before reading data from a file:
 
 ```java
 public class AppInit {
@@ -218,7 +246,7 @@ public class AppInit {
         FieldConverterProvider.registerAdditionalConverter(CustomFieldConverter.class);
 
         // register multiple converters at once
-        Set<Class<? extends FieldConverter<?>>> converters = Set.of(CustomFieldConverter.class, AnotherCustomFieldConverter.class);
+        Set<Class<? extends FieldConverter<?>>> converters = Set.of(CustomFieldConverter.class, MyCalendarConverter.class);
         FieldConverterProvider.registerAdditionalConverters(converters);
     }
 }
